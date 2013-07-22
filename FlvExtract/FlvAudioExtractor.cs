@@ -33,6 +33,7 @@ namespace FlvExtract
         /// <exception cref="IOException">An error occured while writing to or reading from the disk.</exception>
         public void Execute()
         {
+            /*
             using (var flvFile = new FlvFile(this.inputStream, this.outputStream))
             {
                 flvFile.ConversionProgressChanged += (sender, args) =>
@@ -44,7 +45,7 @@ namespace FlvExtract
                 };
 
                 flvFile.ExtractStreams();
-            }
+            }*/
         }
     }
 }
