@@ -41,7 +41,7 @@
     <Compile Include="AVIWriter.cs" />
     <Compile Include="BitHelper.cs" />
     <Compile Include="Dummys.cs" />
-    <Compile Include="FlvAudioExtractor.cs" />
+    <Compile Include="FlvExtractor.cs" />
     <Compile Include="FLVFile.cs" />
     <Compile Include="FractionUInt32.cs" />
     <Compile Include="General.cs" />

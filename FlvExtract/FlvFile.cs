@@ -4,22 +4,24 @@ using System.IO;
 
 namespace FlvExtract
 {
-    public class FLVFile : IDisposable
+    internal class FLVFile : IDisposable
     {
         private readonly Stream audioOutputStream;
+        private readonly Stream videoOutputStream;
         private IAudioWriter _audioWriter;
         private FractionUInt32? _averageFrameRate, _trueFrameRate;
-        private bool _extractAudio, _extractVideo;
         private bool _extractedAudio, _extractedVideo;
         private long _fileOffset, _fileLength;
         private Stream _fs;
         private List<uint> _videoTimeStamps;
         private IVideoWriter _videoWriter;
         private List<string> _warnings;
-        private Stream videoOutputStream;
 
-        public FLVFile(Stream inputStream, Stream audioOutputStream, Stream videoOutputStream)
+        public FLVFile(Stream inputStream, Stream audioOutputStream = null, Stream videoOutputStream = null)
         {
+            if (audioOutputStream == null && videoOutputStream == null)
+                throw new ArgumentNullException();
+
             _warnings = new List<string>();
             _fs = inputStream;
             this.audioOutputStream = audioOutputStream;
@@ -69,12 +71,10 @@ namespace FlvExtract
             CloseOutput(null);
         }
 
-        public void ExtractStreams(bool extractAudio, bool extractVideo)
+        public void ExtractStreams()
         {
             uint dataOffset, flags, prevTagSize;
 
-            _extractAudio = extractAudio;
-            _extractVideo = extractVideo;
             _videoTimeStamps = new List<uint>();
 
             Seek(0);
@@ -354,7 +354,7 @@ namespace FlvExtract
             {  // Audio
                 if (_audioWriter == null)
                 {
-                    _audioWriter = _extractAudio ? GetAudioWriter(mediaInfo) : new DummyAudioWriter();
+                    _audioWriter = this.audioOutputStream != null ? GetAudioWriter(mediaInfo) : new DummyAudioWriter();
                     _extractedAudio = !(_audioWriter is DummyAudioWriter);
                 }
                 _audioWriter.WriteChunk(data, timeStamp);
@@ -363,7 +363,7 @@ namespace FlvExtract
             { // Video
                 if (_videoWriter == null)
                 {
-                    _videoWriter = _extractVideo ? GetVideoWriter(mediaInfo) : new DummyVideoWriter();
+                    _videoWriter = this.videoOutputStream != null ? GetVideoWriter(mediaInfo) : new DummyVideoWriter();
                     _extractedVideo = !(_videoWriter is DummyVideoWriter);
                 }
 
