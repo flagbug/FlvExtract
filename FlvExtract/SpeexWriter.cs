@@ -18,7 +18,6 @@ namespace FlvExtract
         private byte[] _pageBuff;
         private int _pageBuffOffset;
         private uint _pageSequenceNumber;
-        private string _path;
         private int _serialNumber;
 
         public SpeexWriter(Stream ouputStream, int serialNumber)
@@ -34,15 +33,7 @@ namespace FlvExtract
             _granulePosition = 0;
         }
 
-        public string Path
-        {
-            get
-            {
-                return _path;
-            }
-        }
-
-        public void Finish()
+        public void Dispose()
         {
             WritePage();
             FlushPage(true);

@@ -15,7 +15,6 @@ namespace FlvExtract
         private bool _hasVBRHeader;
         private bool _isVBR;
         private int _mpegVersion;
-        private string _path;
         private int _sampleRate;
         private uint _totalFrameLength;
         private List<string> _warnings;
@@ -30,22 +29,16 @@ namespace FlvExtract
             _delayWrite = true;
         }
 
-        public string Path
-        {
-            get
-            {
-                return _path;
-            }
-        }
-
-        public void Finish()
+        public void Dispose()
         {
             Flush();
+
             if (_writeVBRHeader)
             {
                 _fs.Seek(0, SeekOrigin.Begin);
                 WriteVBRHeader(false);
             }
+
             _fs.Dispose();
         }
 

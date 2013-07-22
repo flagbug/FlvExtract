@@ -10,7 +10,7 @@
             }
         }
 
-        public void Finish()
+        public void Dispose()
         {
         }
 

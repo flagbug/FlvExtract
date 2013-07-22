@@ -1,11 +1,9 @@
-﻿namespace FlvExtract
+﻿using System;
+
+namespace FlvExtract
 {
-    internal interface IAudioWriter
+    internal interface IAudioWriter : IDisposable
     {
-        string Path { get; }
-
-        void Finish();
-
         void WriteChunk(byte[] chunk, uint timeStamp);
     }
 }

@@ -66,7 +66,7 @@ namespace FlvExtract
                 _fs = null;
             }
 
-            CloseOutput(null, true);
+            CloseOutput(null);
         }
 
         public void ExtractStreams(bool extractAudio, bool extractVideo)
@@ -106,7 +106,7 @@ namespace FlvExtract
             _averageFrameRate = CalculateAverageFrameRate();
             _trueFrameRate = CalculateTrueFrameRate();
 
-            CloseOutput(_averageFrameRate, false);
+            CloseOutput(_averageFrameRate);
         }
 
         private FractionUInt32? CalculateAverageFrameRate()
@@ -202,7 +202,7 @@ namespace FlvExtract
             return null;
         }
 
-        private void CloseOutput(FractionUInt32? averageFrameRate, bool disposing)
+        private void CloseOutput(FractionUInt32? averageFrameRate)
         {
             if (_videoWriter != null)
             {
@@ -212,7 +212,7 @@ namespace FlvExtract
 
             if (_audioWriter != null)
             {
-                _audioWriter.Finish();
+                _audioWriter.Dispose();
                 _audioWriter = null;
             }
         }

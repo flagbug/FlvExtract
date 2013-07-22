@@ -11,7 +11,6 @@ namespace FlvExtract
         private List<uint> _index;
         private bool _isAlphaWriter;
         private uint _moviDataSize, _indexChunkSize;
-        private string _path;
         private List<string> _warnings;
         private int _width, _height, _frameCount;
         // Chunk:          Off:  Len:
@@ -105,14 +104,6 @@ namespace FlvExtract
             WriteFourCC("movi");
 
             _index = new List<uint>();
-        }
-
-        public string Path
-        {
-            get
-            {
-                return _path;
-            }
         }
 
         private string CodecFourCC

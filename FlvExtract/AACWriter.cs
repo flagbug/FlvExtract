@@ -8,7 +8,6 @@ namespace FlvExtract
         private int _aacProfile;
         private int _channelConfig;
         private Stream _fs;
-        private string _path;
         private int _sampleRateIndex;
 
         public AACWriter(Stream outputStream)
@@ -16,15 +15,7 @@ namespace FlvExtract
             _fs = outputStream;
         }
 
-        public string Path
-        {
-            get
-            {
-                return _path;
-            }
-        }
-
-        public void Finish()
+        public void Dispose()
         {
             _fs.Dispose();
         }

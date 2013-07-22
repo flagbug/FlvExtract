@@ -3,8 +3,30 @@ using System.IO;
 
 namespace FlvExtract
 {
+    internal class WAVWriter : IAudioWriter
+    {
+        private WAVWriter2 _wr;
+        private int blockAlign;
+
+        public WAVWriter(Stream outputStream, int bitsPerSample, int channelCount, int sampleRate)
+        {
+            _wr = new WAVWriter2(outputStream, bitsPerSample, channelCount, sampleRate);
+            blockAlign = (bitsPerSample / 8) * channelCount;
+        }
+
+        public void Dispose()
+        {
+            _wr.Close();
+        }
+
+        public void WriteChunk(byte[] chunk, uint timeStamp)
+        {
+            _wr.Write(chunk, chunk.Length / blockAlign);
+        }
+    }
+
     // Note: Why does this even exist?
-    public class WAVWriter2
+    internal class WAVWriter2
     {
         private int _bitsPerSample, _channelCount, _sampleRate, _blockAlign;
         private BinaryWriter _bw;
@@ -120,37 +142,6 @@ namespace FlvExtract
 
             _bw.Write(fccData);
             _bw.Write((uint)dataChunkSize);
-        }
-    }
-
-    internal class WAVWriter : IAudioWriter
-    {
-        private string _path;
-        private WAVWriter2 _wr;
-        private int blockAlign;
-
-        public WAVWriter(Stream outputStream, int bitsPerSample, int channelCount, int sampleRate)
-        {
-            _wr = new WAVWriter2(outputStream, bitsPerSample, channelCount, sampleRate);
-            blockAlign = (bitsPerSample / 8) * channelCount;
-        }
-
-        public string Path
-        {
-            get
-            {
-                return _path;
-            }
-        }
-
-        public void Finish()
-        {
-            _wr.Close();
-        }
-
-        public void WriteChunk(byte[] chunk, uint timeStamp)
-        {
-            _wr.Write(chunk, chunk.Length / blockAlign);
         }
     }
 }

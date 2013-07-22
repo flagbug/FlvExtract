@@ -8,19 +8,10 @@ namespace FlvExtract
 
         private Stream _fs;
         private int _nalLengthSize;
-        private string _path;
 
         public RawH264Writer(Stream outputStream)
         {
             _fs = outputStream;
-        }
-
-        public string Path
-        {
-            get
-            {
-                return _path;
-            }
         }
 
         public void Finish(FractionUInt32 averageFrameRate)
