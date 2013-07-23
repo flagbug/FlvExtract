@@ -6,7 +6,7 @@ namespace FlvExtract
     {
         public static byte[] GetBytes(ulong value)
         {
-            byte[] buff = new byte[8];
+            var buff = new byte[8];
             buff[0] = (byte)(value >> 56);
             buff[1] = (byte)(value >> 48);
             buff[2] = (byte)(value >> 40);
@@ -20,7 +20,7 @@ namespace FlvExtract
 
         public static byte[] GetBytes(uint value)
         {
-            byte[] buff = new byte[4];
+            var buff = new byte[4];
             buff[0] = (byte)(value >> 24);
             buff[1] = (byte)(value >> 16);
             buff[2] = (byte)(value >> 8);
@@ -30,7 +30,7 @@ namespace FlvExtract
 
         public static byte[] GetBytes(ushort value)
         {
-            byte[] buff = new byte[2];
+            var buff = new byte[2];
             buff[0] = (byte)(value >> 8);
             buff[1] = (byte)(value);
             return buff;
@@ -49,7 +49,7 @@ namespace FlvExtract
                 ((uint)value[startIndex] << 24) |
                 ((uint)value[startIndex + 1] << 16) |
                 ((uint)value[startIndex + 2] << 8) |
-                ((uint)value[startIndex + 3]);
+                value[startIndex + 3];
         }
 
         public static ulong ToUInt64(byte[] value, int startIndex)
@@ -62,7 +62,7 @@ namespace FlvExtract
                 ((ulong)value[startIndex + 4] << 24) |
                 ((ulong)value[startIndex + 5] << 16) |
                 ((ulong)value[startIndex + 6] << 8) |
-                ((ulong)value[startIndex + 7]);
+                value[startIndex + 7];
         }
     }
 
@@ -70,7 +70,7 @@ namespace FlvExtract
     {
         public static byte[] GetBytes(ulong value)
         {
-            byte[] buff = new byte[8];
+            var buff = new byte[8];
             buff[0] = (byte)(value);
             buff[1] = (byte)(value >> 8);
             buff[2] = (byte)(value >> 16);
@@ -84,7 +84,7 @@ namespace FlvExtract
 
         public static byte[] GetBytes(uint value)
         {
-            byte[] buff = new byte[4];
+            var buff = new byte[4];
             buff[0] = (byte)(value);
             buff[1] = (byte)(value >> 8);
             buff[2] = (byte)(value >> 16);
@@ -94,7 +94,7 @@ namespace FlvExtract
 
         public static byte[] GetBytes(ushort value)
         {
-            byte[] buff = new byte[2];
+            var buff = new byte[2];
             buff[0] = (byte)(value);
             buff[1] = (byte)(value >> 8);
             return buff;
@@ -110,7 +110,7 @@ namespace FlvExtract
 
         public static byte[] StringToAscii(string s)
         {
-            byte[] retval = new byte[s.Length];
+            var retval = new byte[s.Length];
             for (int ix = 0; ix < s.Length; ++ix)
             {
                 char ch = s[ix];
@@ -123,7 +123,7 @@ namespace FlvExtract
 
     public static class OggCRC
     {
-        private static uint[] _lut = new uint[256];
+        private static readonly uint[] _lut = new uint[256];
 
         static OggCRC()
         {

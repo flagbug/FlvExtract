@@ -6,12 +6,12 @@ namespace FlvExtract
 {
     internal class AVIWriter : IVideoWriter
     {
-        private BinaryWriter _bw;
-        private int _codecID;
-        private List<uint> _index;
-        private bool _isAlphaWriter;
+        private readonly BinaryWriter _bw;
+        private readonly int _codecID;
+        private readonly List<uint> _index;
+        private readonly bool _isAlphaWriter;
+        private readonly List<string> _warnings;
         private uint _moviDataSize, _indexChunkSize;
-        private List<string> _warnings;
         private int _width, _height, _frameCount;
         // Chunk:          Off:  Len:
         //
@@ -127,7 +127,7 @@ namespace FlvExtract
             WriteIndexChunk();
 
             _bw.BaseStream.Seek(4, SeekOrigin.Begin);
-            _bw.Write((uint)(224 + _moviDataSize + _indexChunkSize - 8));
+            _bw.Write(224 + _moviDataSize + _indexChunkSize - 8);
 
             _bw.BaseStream.Seek(24 + 8, SeekOrigin.Begin);
             _bw.Write((uint)0);
@@ -138,8 +138,8 @@ namespace FlvExtract
             _bw.Write((uint)_height);
 
             _bw.BaseStream.Seek(100 + 28, SeekOrigin.Begin);
-            _bw.Write((uint)averageFrameRate.D);
-            _bw.Write((uint)averageFrameRate.N);
+            _bw.Write(averageFrameRate.D);
+            _bw.Write(averageFrameRate.N);
             _bw.BaseStream.Seek(4, SeekOrigin.Current);
             _bw.Write((uint)_frameCount);
             _bw.BaseStream.Seek(16, SeekOrigin.Current);
@@ -153,7 +153,7 @@ namespace FlvExtract
             _bw.Write((uint)(_width * _height * 6));
 
             _bw.BaseStream.Seek(212 + 4, SeekOrigin.Begin);
-            _bw.Write((uint)(_moviDataSize + 4));
+            _bw.Write(_moviDataSize + 4);
 
             _bw.Dispose();
         }
@@ -193,7 +193,7 @@ namespace FlvExtract
             len = Math.Max(len, 0);
             len = Math.Min(len, chunk.Length - offset);
 
-            _index.Add((frameType == 1) ? (uint)0x10 : (uint)0);
+            _index.Add((frameType == 1) ? (uint)0x10 : 0);
             _index.Add(_moviDataSize + 4);
             _index.Add((uint)len);
 
@@ -217,110 +217,117 @@ namespace FlvExtract
 
         private void GetFrameSize(byte[] chunk)
         {
-            if (_codecID == 2)
+            switch (_codecID)
             {
-                // Reference: flv_h263_decode_picture_header from libavcodec's h263.c
-
-                if (chunk.Length < 10) return;
-
-                if ((chunk[0] != 0) || (chunk[1] != 0))
-                {
-                    return;
-                }
-
-                ulong x = BitConverterBE.ToUInt64(chunk, 2);
-                int format;
-
-                if (BitHelper.Read(ref x, 1) != 1)
-                {
-                    return;
-                }
-                BitHelper.Read(ref x, 5);
-                BitHelper.Read(ref x, 8);
-
-                format = BitHelper.Read(ref x, 3);
-                switch (format)
-                {
-                    case 0:
-                        _width = BitHelper.Read(ref x, 8);
-                        _height = BitHelper.Read(ref x, 8);
-                        break;
-
-                    case 1:
-                        _width = BitHelper.Read(ref x, 16);
-                        _height = BitHelper.Read(ref x, 16);
-                        break;
-
-                    case 2:
-                        _width = 352;
-                        _height = 288;
-                        break;
-
-                    case 3:
-                        _width = 176;
-                        _height = 144;
-                        break;
-
-                    case 4:
-                        _width = 128;
-                        _height = 96;
-                        break;
-
-                    case 5:
-                        _width = 320;
-                        _height = 240;
-                        break;
-
-                    case 6:
-                        _width = 160;
-                        _height = 120;
-                        break;
-
-                    default:
-                        return;
-                }
-            }
-            else if ((_codecID == 4) || (_codecID == 5))
-            {
-                // Reference: vp6_parse_header from libavcodec's vp6.c
-
-                int skip = (_codecID == 4) ? 1 : 4;
-                if (chunk.Length < (skip + 8)) return;
-                ulong x = BitConverterBE.ToUInt64(chunk, skip);
-
-                int deltaFrameFlag = BitHelper.Read(ref x, 1);
-                int quant = BitHelper.Read(ref x, 6);
-                int separatedCoeffFlag = BitHelper.Read(ref x, 1);
-                int subVersion = BitHelper.Read(ref x, 5);
-                int filterHeader = BitHelper.Read(ref x, 2);
-                int interlacedFlag = BitHelper.Read(ref x, 1);
-
-                if (deltaFrameFlag != 0)
-                {
-                    return;
-                }
-                if ((separatedCoeffFlag != 0) || (filterHeader == 0))
-                {
-                    BitHelper.Read(ref x, 16);
-                }
-
-                _height = BitHelper.Read(ref x, 8) * 16;
-                _width = BitHelper.Read(ref x, 8) * 16;
-
-                // chunk[0] contains the width and height (4 bits each, respectively) that should
-                // be cropped off during playback, which will be non-zero if the encoder padded
-                // the frames to a macroblock boundary.  But if you use this adjusted size in the
-                // AVI header, DirectShow seems to ignore it, and it can cause stride or chroma
-                // alignment problems with VFW if the width/height aren't multiples of 4.
-                if (!_isAlphaWriter)
-                {
-                    int cropX = chunk[0] >> 4;
-                    int cropY = chunk[0] & 0x0F;
-                    if (((cropX != 0) || (cropY != 0)) && !_isAlphaWriter)
+                case 2:
                     {
-                        _warnings.Add(String.Format("Suggested cropping: {0} pixels from right, {1} pixels from bottom.", cropX, cropY));
+                        // Reference: flv_h263_decode_picture_header from libavcodec's h263.c
+
+                        if (chunk.Length < 10) return;
+
+                        if ((chunk[0] != 0) || (chunk[1] != 0))
+                        {
+                            return;
+                        }
+
+                        ulong x = BitConverterBE.ToUInt64(chunk, 2);
+                        int format;
+
+                        if (BitHelper.Read(ref x, 1) != 1)
+                        {
+                            return;
+                        }
+                        BitHelper.Read(ref x, 5);
+                        BitHelper.Read(ref x, 8);
+
+                        format = BitHelper.Read(ref x, 3);
+                        switch (format)
+                        {
+                            case 0:
+                                _width = BitHelper.Read(ref x, 8);
+                                _height = BitHelper.Read(ref x, 8);
+                                break;
+
+                            case 1:
+                                _width = BitHelper.Read(ref x, 16);
+                                _height = BitHelper.Read(ref x, 16);
+                                break;
+
+                            case 2:
+                                _width = 352;
+                                _height = 288;
+                                break;
+
+                            case 3:
+                                _width = 176;
+                                _height = 144;
+                                break;
+
+                            case 4:
+                                _width = 128;
+                                _height = 96;
+                                break;
+
+                            case 5:
+                                _width = 320;
+                                _height = 240;
+                                break;
+
+                            case 6:
+                                _width = 160;
+                                _height = 120;
+                                break;
+
+                            default:
+                                return;
+                        }
                     }
-                }
+                    break;
+
+                case 5:
+                case 4:
+                    {
+                        // Reference: vp6_parse_header from libavcodec's vp6.c
+
+                        int skip = (_codecID == 4) ? 1 : 4;
+                        if (chunk.Length < (skip + 8)) return;
+                        ulong x = BitConverterBE.ToUInt64(chunk, skip);
+
+                        int deltaFrameFlag = BitHelper.Read(ref x, 1);
+                        int quant = BitHelper.Read(ref x, 6);
+                        int separatedCoeffFlag = BitHelper.Read(ref x, 1);
+                        int subVersion = BitHelper.Read(ref x, 5);
+                        int filterHeader = BitHelper.Read(ref x, 2);
+                        int interlacedFlag = BitHelper.Read(ref x, 1);
+
+                        if (deltaFrameFlag != 0)
+                        {
+                            return;
+                        }
+                        if ((separatedCoeffFlag != 0) || (filterHeader == 0))
+                        {
+                            BitHelper.Read(ref x, 16);
+                        }
+
+                        _height = BitHelper.Read(ref x, 8) * 16;
+                        _width = BitHelper.Read(ref x, 8) * 16;
+
+                        // chunk[0] contains the width and height (4 bits each, respectively) that should
+                        // be cropped off during playback, which will be non-zero if the encoder padded
+                        // the frames to a macroblock boundary.  But if you use this adjusted size in the
+                        // AVI header, DirectShow seems to ignore it, and it can cause stride or chroma
+                        // alignment problems with VFW if the width/height aren't multiples of 4.
+                        if (!_isAlphaWriter)
+                        {
+                            int cropX = chunk[0] >> 4;
+                            int cropY = chunk[0] & 0x0F;
+                            if (((cropX != 0) || (cropY != 0)) && !_isAlphaWriter)
+                            {
+                                _warnings.Add(String.Format("Suggested cropping: {0} pixels from right, {1} pixels from bottom.", cropX, cropY));
+                            }
+                        }
+                    }
+                    break;
             }
         }
 

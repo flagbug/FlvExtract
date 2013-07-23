@@ -1,6 +1,6 @@
 ﻿namespace FlvExtract
 {
-    public struct FractionUInt32
+    internal struct FractionUInt32
     {
         public uint D;
         public uint N;
@@ -20,7 +20,7 @@
 
         public double ToDouble()
         {
-            return (double)N / (double)D;
+            return (double)N / D;
         }
 
         public override string ToString()
@@ -30,23 +30,14 @@
 
         public string ToString(bool full)
         {
-            if (full)
-            {
-                return ToDouble().ToString() + " (" + N.ToString() + "/" + D.ToString() + ")";
-            }
-            else
-            {
-                return ToDouble().ToString("0.####");
-            }
+            return full ? ToDouble() + " (" + N + "/" + D + ")" : ToDouble().ToString("0.####");
         }
 
-        private uint GCD(uint a, uint b)
+        private static uint GCD(uint a, uint b)
         {
-            uint r;
-
             while (b != 0)
             {
-                r = a % b;
+                uint r = a % b;
                 a = b;
                 b = r;
             }

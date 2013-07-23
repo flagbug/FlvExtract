@@ -6,16 +6,16 @@ namespace FlvExtract
 {
     internal class FLVFile : IDisposable
     {
+        private readonly long _fileLength;
+        private readonly List<string> _warnings;
         private readonly Stream audioOutputStream;
         private readonly Stream videoOutputStream;
         private IAudioWriter _audioWriter;
         private FractionUInt32? _averageFrameRate, _trueFrameRate;
-        private bool _extractedAudio, _extractedVideo;
-        private long _fileOffset, _fileLength;
+        private long _fileOffset;
         private Stream _fs;
         private List<uint> _videoTimeStamps;
         private IVideoWriter _videoWriter;
-        private List<string> _warnings;
 
         public FLVFile(Stream inputStream, Stream audioOutputStream = null, Stream videoOutputStream = null)
         {
@@ -35,15 +35,9 @@ namespace FlvExtract
             get { return _averageFrameRate; }
         }
 
-        public bool ExtractedAudio
-        {
-            get { return _extractedAudio; }
-        }
+        public bool ExtractedAudio { get; private set; }
 
-        public bool ExtractedVideo
-        {
-            get { return _extractedVideo; }
-        }
+        public bool ExtractedVideo { get; private set; }
 
         public FractionUInt32? TrueFrameRate
         {
@@ -84,23 +78,21 @@ namespace FlvExtract
                 {
                     throw new Exception("This is a MP4 file. YAMB or MP4Box can be used to extract streams.");
                 }
-                else
-                {
-                    throw new Exception("This isn't a FLV file.");
-                }
+
+                throw new Exception("This isn't a FLV file.");
             }
 
-            flags = ReadUInt8();
+            ReadUInt8();
             dataOffset = ReadUInt32();
 
             Seek(dataOffset);
 
-            prevTagSize = ReadUInt32();
+            ReadUInt32();
             while (_fileOffset < _fileLength)
             {
                 if (!ReadTag()) break;
                 if ((_fileLength - _fileOffset) < 4) break;
-                prevTagSize = ReadUInt32();
+                ReadUInt32();
             }
 
             _averageFrameRate = CalculateAverageFrameRate();
@@ -111,26 +103,23 @@ namespace FlvExtract
 
         private FractionUInt32? CalculateAverageFrameRate()
         {
-            FractionUInt32 frameRate;
             int frameCount = _videoTimeStamps.Count;
 
             if (frameCount > 1)
             {
+                FractionUInt32 frameRate;
                 frameRate.N = (uint)(frameCount - 1) * 1000;
                 frameRate.D = _videoTimeStamps[frameCount - 1] - _videoTimeStamps[0];
                 frameRate.Reduce();
                 return frameRate;
             }
-            else
-            {
-                return null;
-            }
+
+            return null;
         }
 
         private FractionUInt32? CalculateTrueFrameRate()
         {
-            FractionUInt32 frameRate;
-            Dictionary<uint, uint> deltaCount = new Dictionary<uint, uint>();
+            var deltaCount = new Dictionary<uint, uint>();
             int i, threshold;
             uint delta, count, minDelta;
 
@@ -191,6 +180,7 @@ namespace FlvExtract
 
                 if (totalTime != 0)
                 {
+                    FractionUInt32 frameRate;
                     frameRate.N = totalFrames * 1000;
                     frameRate.D = totalTime;
                     frameRate.Reduce();
@@ -323,7 +313,6 @@ namespace FlvExtract
         private bool ReadTag()
         {
             uint tagType, dataSize, timeStamp, streamID, mediaInfo;
-            byte[] data;
 
             if ((_fileLength - _fileOffset) < 11)
             {
@@ -348,23 +337,25 @@ namespace FlvExtract
             }
             mediaInfo = ReadUInt8();
             dataSize -= 1;
-            data = ReadBytes((int)dataSize);
+            byte[] data = ReadBytes((int)dataSize);
 
             if (tagType == 0x8)
-            {  // Audio
+            {
+                // Audio
                 if (_audioWriter == null)
                 {
                     _audioWriter = this.audioOutputStream != null ? GetAudioWriter(mediaInfo) : new DummyAudioWriter();
-                    _extractedAudio = !(_audioWriter is DummyAudioWriter);
+                    ExtractedAudio = !(_audioWriter is DummyAudioWriter);
                 }
                 _audioWriter.WriteChunk(data, timeStamp);
             }
             else if ((tagType == 0x9) && ((mediaInfo >> 4) != 5))
-            { // Video
+            {
+                // Video
                 if (_videoWriter == null)
                 {
                     _videoWriter = this.videoOutputStream != null ? GetVideoWriter(mediaInfo) : new DummyVideoWriter();
-                    _extractedVideo = !(_videoWriter is DummyVideoWriter);
+                    ExtractedVideo = !(_videoWriter is DummyVideoWriter);
                 }
 
                 _videoTimeStamps.Add(timeStamp);
@@ -376,7 +367,7 @@ namespace FlvExtract
 
         private uint ReadUInt24()
         {
-            byte[] x = new byte[4];
+            var x = new byte[4];
             _fs.Read(x, 1, 3);
             _fileOffset += 3;
             return BitConverterBE.ToUInt32(x, 0);
@@ -384,7 +375,7 @@ namespace FlvExtract
 
         private uint ReadUInt32()
         {
-            byte[] x = new byte[4];
+            var x = new byte[4];
             _fs.Read(x, 0, 4);
             _fileOffset += 4;
             return BitConverterBE.ToUInt32(x, 0);

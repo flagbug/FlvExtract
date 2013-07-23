@@ -4,9 +4,9 @@ namespace FlvExtract
 {
     internal class RawH264Writer : IVideoWriter
     {
-        private static readonly byte[] _startCode = new byte[] { 0, 0, 0, 1 };
+        private static readonly byte[] _startCode = { 0, 0, 0, 1 };
 
-        private Stream _fs;
+        private readonly Stream _fs;
         private int _nalLengthSize;
 
         public RawH264Writer(Stream outputStream)
@@ -48,7 +48,7 @@ namespace FlvExtract
                     else if (ppsCount > 0) ppsCount--;
                     else break;
 
-                    int len = (int)BitConverterBE.ToUInt16(chunk, offset);
+                    int len = BitConverterBE.ToUInt16(chunk, offset);
                     offset += 2;
                     if (offset + len > chunk.Length) break;
                     _fs.Write(_startCode, 0, _startCode.Length);
@@ -68,7 +68,7 @@ namespace FlvExtract
                 while (offset <= chunk.Length - _nalLengthSize)
                 {
                     int len = (_nalLengthSize == 2) ?
-                        (int)BitConverterBE.ToUInt16(chunk, offset) :
+                        BitConverterBE.ToUInt16(chunk, offset) :
                         (int)BitConverterBE.ToUInt32(chunk, offset);
                     offset += _nalLengthSize;
                     if (offset + len > chunk.Length) break;
