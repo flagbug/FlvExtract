@@ -36,6 +36,9 @@ namespace FlvExtract
 
         public FLVFile(Stream inputStream, Stream audioOutputStream = null, Stream videoOutputStream = null)
         {
+            if (inputStream == null)
+                throw new ArgumentNullException("inputStream");
+
             if (audioOutputStream == null && videoOutputStream == null)
                 throw new ArgumentNullException();
 

@@ -19,8 +19,13 @@ namespace FlvExtract
         /// <param name="outputStream">The audio output stream. This is the stream that the audio track gets written to.</param>
         public static FlvExtractor CreateAudioExtractor(Stream inputStream, Stream outputStream)
         {
-            var file = new FLVFile(inputStream, outputStream);
+            if (inputStream == null)
+                throw new ArgumentNullException("inputStream");
 
+            if (outputStream == null)
+                throw new ArgumentNullException("outputStream");
+
+            var file = new FLVFile(inputStream, outputStream);
             return new FlvExtractor { file = file, infoFunc = () => new ExtractionInfo(file.AudioFormat) };
         }
 
@@ -32,6 +37,15 @@ namespace FlvExtract
         /// <param name="videoOutputStream">The video output stream. This is the stream that the video track gets written to.</param>
         public static FlvExtractor CreateExtractor(Stream inputStream, Stream audioOutputStream, Stream videoOutputStream)
         {
+            if (inputStream == null)
+                throw new ArgumentNullException("inputStream");
+
+            if (audioOutputStream == null)
+                throw new ArgumentNullException("audioOutputStream");
+
+            if (videoOutputStream == null)
+                throw new ArgumentNullException("videoOutputStream");
+
             var file = new FLVFile(inputStream, audioOutputStream, videoOutputStream);
             return new FlvExtractor { file = file, infoFunc = () => new ExtractionInfo(file.AudioFormat, file.VideoFormat) };
         }
@@ -43,6 +57,12 @@ namespace FlvExtract
         /// <param name="outputStream">The video output stream. This is the stream that the video track gets written to.</param>
         public static FlvExtractor CreateVideoExtractor(Stream inputStream, Stream outputStream)
         {
+            if (inputStream == null)
+                throw new ArgumentNullException("inputStream");
+
+            if (outputStream == null)
+                throw new ArgumentNullException("outputStream");
+
             var file = new FLVFile(inputStream, videoOutputStream: outputStream);
             return new FlvExtractor { file = file, infoFunc = () => new ExtractionInfo(file.VideoFormat) };
         }
