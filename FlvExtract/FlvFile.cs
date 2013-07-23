@@ -47,6 +47,8 @@ namespace FlvExtract
             _fileLength = _fs.Length;
         }
 
+        public event EventHandler<ProgressEventArgs> ProgressChanged;
+
         public AudioFormat AudioFormat { get; private set; }
 
         public FractionUInt32? AverageFrameRate
@@ -110,6 +112,13 @@ namespace FlvExtract
                 if (!ReadTag()) break;
                 if ((_fileLength - _fileOffset) < 4) break;
                 ReadUInt32();
+
+                double progress = (this._fileOffset * 1.0 / this._fileLength) * 100;
+
+                if (this.ProgressChanged != null)
+                {
+                    this.ProgressChanged(this, new ProgressEventArgs(progress));
+                }
             }
 
             _averageFrameRate = CalculateAverageFrameRate();

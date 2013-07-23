@@ -54,6 +54,14 @@ namespace FlvExtract
         /// <exception cref="IOException">An error occured while writing to or reading from the disk.</exception>
         public ExtractionInfo Execute()
         {
+            file.ProgressChanged += (sender, args) =>
+            {
+                if (this.ProgressChanged != null)
+                {
+                    this.ProgressChanged(this, args);
+                }
+            };
+
             try
             {
                 file.ExtractStreams();
