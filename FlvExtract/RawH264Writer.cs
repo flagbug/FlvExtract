@@ -14,6 +14,11 @@ namespace FlvExtract
             _fs = outputStream;
         }
 
+        public VideoFormat VideoFormat
+        {
+            get { return VideoFormat.H264; }
+        }
+
         public void Finish(FractionUInt32 averageFrameRate)
         {
             _fs.Dispose();

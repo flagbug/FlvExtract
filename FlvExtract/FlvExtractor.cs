@@ -7,6 +7,7 @@ namespace FlvExtract
     {
         public EventHandler<ProgressEventArgs> ProgressChanged;
         private FLVFile file;
+        private Func<ExtractionInfo> infoFunc;
 
         private FlvExtractor()
         { }
@@ -18,7 +19,9 @@ namespace FlvExtract
         /// <param name="outputStream">The audio output stream. This is the stream that the audio track gets written to.</param>
         public static FlvExtractor CreateAudioExtractor(Stream inputStream, Stream outputStream)
         {
-            return new FlvExtractor { file = new FLVFile(inputStream, outputStream) };
+            var file = new FLVFile(inputStream, outputStream);
+
+            return new FlvExtractor { file = file, infoFunc = () => new ExtractionInfo(file.AudioFormat) };
         }
 
         /// <summary>
@@ -29,7 +32,8 @@ namespace FlvExtract
         /// <param name="videoOutputStream">The video output stream. This is the stream that the video track gets written to.</param>
         public static FlvExtractor CreateExtractor(Stream inputStream, Stream audioOutputStream, Stream videoOutputStream)
         {
-            return new FlvExtractor { file = new FLVFile(inputStream, audioOutputStream, videoOutputStream) };
+            var file = new FLVFile(inputStream, audioOutputStream, videoOutputStream);
+            return new FlvExtractor { file = file, infoFunc = () => new ExtractionInfo(file.AudioFormat, file.VideoFormat) };
         }
 
         /// <summary>
@@ -39,19 +43,21 @@ namespace FlvExtract
         /// <param name="outputStream">The video output stream. This is the stream that the video track gets written to.</param>
         public static FlvExtractor CreateVideoExtractor(Stream inputStream, Stream outputStream)
         {
-            return new FlvExtractor { file = new FLVFile(inputStream, videoOutputStream: outputStream) };
+            var file = new FLVFile(inputStream, videoOutputStream: outputStream);
+            return new FlvExtractor { file = file, infoFunc = () => new ExtractionInfo(file.VideoFormat) };
         }
 
         /// <summary>
         /// Executes the audio extraction. This method runs synchronously but reports it's progress through the <see cref="ProgressChanged"/> event.
         /// </summary>
-        /// <exception cref="AudioExtractionException">An error occured during audio extraction.</exception>
+        /// <exception cref="ExtractionException">An error occured during the audio or video extraction.</exception>
         /// <exception cref="IOException">An error occured while writing to or reading from the disk.</exception>
-        public void Execute()
+        public ExtractionInfo Execute()
         {
             try
             {
                 file.ExtractStreams();
+                return this.infoFunc();
             }
 
             finally

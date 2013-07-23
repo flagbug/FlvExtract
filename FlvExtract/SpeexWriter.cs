@@ -33,6 +33,11 @@ namespace FlvExtract
             _granulePosition = 0;
         }
 
+        public AudioFormat AudioFormat
+        {
+            get { return AudioFormat.Speex; }
+        }
+
         public void Dispose()
         {
             WritePage();
@@ -63,7 +68,10 @@ namespace FlvExtract
                 {
                     // wideband frame
                     x = BitHelper.Read(chunk, ref offset, 3);
-                    if (x < 1 || x > 4) goto Error;
+                    if (x < 1 || x > 4)
+                    {
+                        ThrowInvalidSpeexDataException();
+                    }
                     offset += wideBandSizes[x] - 4;
                 }
                 else
@@ -87,32 +95,44 @@ namespace FlvExtract
                     else if (x == 14)
                     {
                         // in-band signal
-                        if (length - offset < 4) goto Error;
+                        if (length - offset < 4)
+                        {
+                            ThrowInvalidSpeexDataException();
+                        }
                         x = BitHelper.Read(chunk, ref offset, 4);
                         offset += inBandSignalSizes[x];
                     }
                     else if (x == 13)
                     {
                         // custom in-band signal
-                        if (length - offset < 5) goto Error;
+                        if (length - offset < 5)
+                        {
+                            ThrowInvalidSpeexDataException();
+                        }
                         x = BitHelper.Read(chunk, ref offset, 5);
                         offset += x * 8;
                     }
-                    else goto Error;
+                    else
+                    {
+                        ThrowInvalidSpeexDataException();
+                    }
                 }
                 frameEnd = offset;
             }
-            if (offset > length) goto Error;
+            if (offset > length)
+            {
+                ThrowInvalidSpeexDataException();
+            }
 
             if (frameStart != -1)
             {
                 WriteFramePacket(chunk, frameStart, frameEnd);
             }
+        }
 
-            return;
-
-        Error:
-            throw new Exception("Invalid Speex data.");
+        private static void ThrowInvalidSpeexDataException()
+        {
+            throw new ExtractionException("Invalid Speex data.");
         }
 
         private void AddPacket(byte[] data, uint sampleLength, bool delayWrite)
@@ -120,7 +140,7 @@ namespace FlvExtract
             var packet = new OggPacket();
             if (data.Length >= 255)
             {
-                throw new Exception("Packet exceeds maximum size.");
+                throw new ExtractionException("Packet exceeds maximum size.");
             }
             _granulePosition += sampleLength;
             packet.Data = data;

@@ -29,6 +29,11 @@ namespace FlvExtract
             _delayWrite = true;
         }
 
+        public AudioFormat AudioFormat
+        {
+            get { return AudioFormat.Mp3; }
+        }
+
         public void Dispose()
         {
             Flush();

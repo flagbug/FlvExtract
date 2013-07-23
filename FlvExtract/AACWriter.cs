@@ -1,5 +1,4 @@
-﻿using System;
-using System.IO;
+﻿using System.IO;
 
 namespace FlvExtract
 {
@@ -13,6 +12,11 @@ namespace FlvExtract
         public AACWriter(Stream outputStream)
         {
             _fs = outputStream;
+        }
+
+        public AudioFormat AudioFormat
+        {
+            get { return AudioFormat.Aac; }
         }
 
         public void Dispose()
@@ -35,11 +39,11 @@ namespace FlvExtract
                 _channelConfig = BitHelper.Read(ref bits, 4);
 
                 if ((_aacProfile < 0) || (_aacProfile > 3))
-                    throw new Exception("Unsupported AAC profile.");
+                    throw new ExtractionException("Unsupported AAC profile.");
                 if (_sampleRateIndex > 12)
-                    throw new Exception("Invalid AAC sample rate index.");
+                    throw new ExtractionException("Invalid AAC sample rate index.");
                 if (_channelConfig > 6)
-                    throw new Exception("Invalid AAC channel configuration.");
+                    throw new ExtractionException("Invalid AAC channel configuration.");
             }
             else
             { // Audio data

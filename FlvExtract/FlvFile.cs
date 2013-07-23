@@ -30,19 +30,19 @@ namespace FlvExtract
             _fileLength = _fs.Length;
         }
 
+        public AudioFormat AudioFormat { get; private set; }
+
         public FractionUInt32? AverageFrameRate
         {
             get { return _averageFrameRate; }
         }
 
-        public bool ExtractedAudio { get; private set; }
-
-        public bool ExtractedVideo { get; private set; }
-
         public FractionUInt32? TrueFrameRate
         {
             get { return _trueFrameRate; }
         }
+
+        public VideoFormat VideoFormat { get; private set; }
 
         public string[] Warnings
         {
@@ -67,7 +67,7 @@ namespace FlvExtract
 
         public void ExtractStreams()
         {
-            uint dataOffset, flags, prevTagSize;
+            uint dataOffset;
 
             _videoTimeStamps = new List<uint>();
 
@@ -76,10 +76,10 @@ namespace FlvExtract
             {
                 if (_fileLength >= 8 && ReadUInt32() == 0x66747970)
                 {
-                    throw new Exception("This is a MP4 file. YAMB or MP4Box can be used to extract streams.");
+                    throw new ExtractionException("This is a MP4 file. YAMB or MP4Box can be used to extract streams.");
                 }
 
-                throw new Exception("This isn't a FLV file.");
+                throw new ExtractionException("This isn't a FLV file.");
             }
 
             ReadUInt8();
@@ -126,7 +126,7 @@ namespace FlvExtract
             // Calculate the distance between the timestamps, count how many times each delta appears
             for (i = 1; i < _videoTimeStamps.Count; i++)
             {
-                int deltaS = (int)((long)_videoTimeStamps[i] - (long)_videoTimeStamps[i - 1]);
+                int deltaS = (int)((long)_videoTimeStamps[i] - _videoTimeStamps[i - 1]);
 
                 if (deltaS <= 0) continue;
                 delta = (uint)deltaS;
@@ -264,13 +264,11 @@ namespace FlvExtract
                     break;
 
                 default:
-                    typeStr = "format=" + format.ToString();
+                    typeStr = "format=" + format;
                     break;
             }
 
-            _warnings.Add("Unable to extract audio (" + typeStr + " is unsupported).");
-
-            return new DummyAudioWriter(); // TODO: Throw an exception or tell the user somehow that the audio can not be extracted
+            throw new ExtractionException("Unable to extract audio (" + typeStr + " is unsupported).");
         }
 
         private IVideoWriter GetVideoWriter(uint mediaInfo)
@@ -297,14 +295,12 @@ namespace FlvExtract
             else
                 typeStr = "codecID=" + codecID;
 
-            _warnings.Add("Unable to extract video (" + typeStr + " is unsupported).");
-
-            return new DummyVideoWriter(); // TODO: Throw an exception or tell the user somehow that the audio can not be extracted
+            throw new ExtractionException("Unable to extract video (" + typeStr + " is unsupported).");
         }
 
         private byte[] ReadBytes(int length)
         {
-            byte[] buff = new byte[length];
+            var buff = new byte[length];
             _fs.Read(buff, 0, length);
             _fileOffset += length;
             return buff;
@@ -324,7 +320,7 @@ namespace FlvExtract
             dataSize = ReadUInt24();
             timeStamp = ReadUInt24();
             timeStamp |= ReadUInt8() << 24;
-            streamID = ReadUInt24();
+            ReadUInt24();
 
             // Read tag data
             if (dataSize == 0)
@@ -339,23 +335,25 @@ namespace FlvExtract
             dataSize -= 1;
             byte[] data = ReadBytes((int)dataSize);
 
-            if (tagType == 0x8)
+            if (tagType == 0x8 && this.audioOutputStream != null)
             {
                 // Audio
                 if (_audioWriter == null)
                 {
-                    _audioWriter = this.audioOutputStream != null ? GetAudioWriter(mediaInfo) : new DummyAudioWriter();
-                    ExtractedAudio = !(_audioWriter is DummyAudioWriter);
+                    _audioWriter = this.GetAudioWriter(mediaInfo);
+                    this.AudioFormat = this._audioWriter.AudioFormat;
                 }
+
                 _audioWriter.WriteChunk(data, timeStamp);
             }
-            else if ((tagType == 0x9) && ((mediaInfo >> 4) != 5))
+
+            else if ((tagType == 0x9) && ((mediaInfo >> 4) != 5) && this.videoOutputStream != null)
             {
                 // Video
                 if (_videoWriter == null)
                 {
-                    _videoWriter = this.videoOutputStream != null ? GetVideoWriter(mediaInfo) : new DummyVideoWriter();
-                    ExtractedVideo = !(_videoWriter is DummyVideoWriter);
+                    _videoWriter = this.GetVideoWriter(mediaInfo);
+                    this.VideoFormat = this._videoWriter.VideoFormat;
                 }
 
                 _videoTimeStamps.Add(timeStamp);

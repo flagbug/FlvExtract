@@ -1,5 +1,4 @@
-﻿using System;
-using System.IO;
+﻿using System.IO;
 
 namespace FlvExtract
 {
@@ -12,6 +11,11 @@ namespace FlvExtract
         {
             _wr = new WAVWriter2(outputStream, bitsPerSample, channelCount, sampleRate);
             blockAlign = (bitsPerSample / 8) * channelCount;
+        }
+
+        public AudioFormat AudioFormat
+        {
+            get { return AudioFormat.Wav; }
         }
 
         public void Dispose()
@@ -82,7 +86,7 @@ namespace FlvExtract
                     }
                     else
                     {
-                        throw new Exception("Samples written differs from the expected sample count.");
+                        throw new ExtractionException("Samples written differs from the expected sample count.");
                     }
                 }
             }
