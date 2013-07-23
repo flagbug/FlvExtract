@@ -325,7 +325,7 @@ namespace FlvExtract
 
         private bool ReadTag()
         {
-            uint tagType, dataSize, timeStamp, streamID, mediaInfo;
+            uint tagType, dataSize, timeStamp, mediaInfo;
 
             if ((_fileLength - _fileOffset) < 11)
             {
