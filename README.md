@@ -1,9 +1,9 @@
 FlvExtract
 ==========
 
-A portable (PCL) .NET library that extracts the Mp3 and AAC streams from FLV files
+A portable (PCL) .NET library that extracts the audio and/or video tracks from FLV files
 
-This library is a PCL port of the FlvExtract library from J.D. Purcell (http://moitah.net/)
+This library is a PCL port of the FlvExtract library from Moitah (http://moitah.net/)
 
 ### License
 
